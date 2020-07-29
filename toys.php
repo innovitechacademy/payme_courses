@@ -5,11 +5,6 @@ require_once 'classes/DB.class.php';
 require_once 'classes/Msg.class.php';
 require_once 'classes/User.class.php';
 
-session_start();
-if(!isset($_SESSION['shopping_cart'])){
-    $_SESSION['shopping_cart'] = [];
-}
-
 $db = new DB();
 $msg = new Msg();
 $user = new User();
@@ -98,36 +93,6 @@ $user = new User();
                                 <button type="button"><i class="ti-search"></i></button>
                             </form>
                         </div>
-                    </div>
-                    <div class="col-lg-3 text-right col-md-3">
-                        <ul class="nav-right">
-                            <li class="heart-icon"><a href="#">
-                                    <i class="icon_heart_alt"></i>
-                                    <span>0</span>
-                                </a>
-                            </li>
-                            <li class="cart-icon"><a href="#">
-                                    <i class="icon_bag_alt"></i>
-                                    <span id='icon_bag_alt_num'>0</span>
-                                </a>
-                                <div class="cart-hover">
-                                    <div class="select-items">
-                                        <table>
-                                            <tbody id='select-items-list'></tbody>
-                                        </table>
-                                    </div>
-                                    <div class="select-total">
-                                        <span>total:</span>
-                                        <h5>$<b class='cart-price'>0</b></h5>
-                                    </div>
-                                    <div class="select-button">
-                                        <a href="#" class="primary-btn view-card">VIEW CARD</a>
-                                        <a href="checkout.php" class="primary-btn checkout-btn">CHECK OUT</a>
-                                    </div>
-                                </div>
-                            </li>
-                            <li>$<span class='cart-price'>0</span></li>
-                        </ul>
                     </div>
                 </div>
             </div>
@@ -768,134 +733,6 @@ Copyright &copy;<script>document.write(new Date().getFullYear());</script> All r
     <script src="js/jquery.slicknav.js"></script>
     <script src="js/owl.carousel.min.js"></script>
     <script src="js/main.js"></script>
-
-    
-
-    <script>
-        /*-------------------
-            Shopping cart
-        --------------------- */
-        $(function () {
-            function add_cart_item(item_id,price,name,num=1){
-                $('#select-items-list').append(`<tr id='item_list_${item_id}'>
-                    <td class="si-pic"><img src="image/test.png"></td>
-                    <td class="si-text">
-                        <div class="product-selected">
-                            <p>$${price} x <span id='item_${item_id}_num'>${num}</span></p>
-                            <h6>${name}</h6>
-                        </div>
-                    </td>
-                    <td class="si-close">
-                        <button class='remove_shopping_cart' item_id='${item_id}'><i class="ti-close"></i></button>
-                    </td>
-                </tr>`);
-            }
-
-            function total_price(shopping_cart){
-                var total_price = 0;
-                for(i in shopping_cart){
-                    total_price += shopping_cart[i]['num'] * shopping_cart[i]['price'];
-                }
-                $('.cart-price').text(total_price);
-            }
-            
-            let shopping_cart = JSON.parse(`<?php echo json_encode($_SESSION['shopping_cart']) ?>`);
-            let icon_bag_alt_num = 0;
-            // let total_price = 0;
-
-            // console.log(shopping_cart);
-            // $('#icon_bag_alt_num').text(++icon_bag_alt_num);
-
-            for(i in shopping_cart){
-                shopping_cart[i]['num'] = parseInt(shopping_cart[i]['num']);
-                shopping_cart[i]['price'] = parseFloat(shopping_cart[i]['price']);
-
-                add_cart_item(i,shopping_cart[i]['price'],shopping_cart[i]['name'],shopping_cart[i]['num']);
-                icon_bag_alt_num += shopping_cart[i]['num']
-            }
-            $('#icon_bag_alt_num').text(icon_bag_alt_num);
-            total_price(shopping_cart);
-
-            $(document).on('click', '.add_shopping_cart', function(){
-                let item_id = parseInt($(this).attr('id').replace('item_',''));
-                let price = parseFloat($(this).attr('product_price').replace('about','').replace('USD',''));
-                let name = $(this).attr('product_name');
-
-                let ajax_data = {
-                    'item_id':item_id
-                };
-
-                if(!shopping_cart[item_id]){
-                    ajax_data.price = price;
-                    ajax_data.name = name;
-                    shopping_cart[item_id] = {
-                        'num':0,
-                        'price':0,
-                        'name':''
-                    };
-                    shopping_cart[item_id]['num'] = 1;
-                    shopping_cart[item_id]['price'] = price;
-                    shopping_cart[item_id]['name'] = name;
-
-                    add_cart_item(item_id,price,name);
-                }
-                else{
-                    shopping_cart[item_id]['num'] += 1;
-                    $(`#item_${item_id}_num`).text(shopping_cart[item_id]['num']);
-                }
-                $('#icon_bag_alt_num').text(++icon_bag_alt_num);
-
-                // total_price = 0;
-                // for(i in shopping_cart){
-                //     total_price += shopping_cart[i]['num'] * shopping_cart[i]['price'];
-                // }
-                // $('.cart-price').text(total_price);
-                total_price(shopping_cart);
-                
-                $.ajax({
-                    type: "post",
-                    url: "js/add_shopping_cart.php",
-                    data: ajax_data,
-                    success: function(response){
-                        response = JSON.parse(response);
-                        console.log(response);
-                    }
-                });
-            });
-
-
-            $(document).on('click', '.remove_shopping_cart', function(){
-                let item_id = parseInt($(this).attr('item_id'));
-
-                if(shopping_cart[item_id]['num'] == 1){
-                    delete shopping_cart[item_id];
-                    $(`#item_list_${item_id}`).remove();
-                }
-                else{
-                    shopping_cart[item_id]['num'] -= 1;
-                    $(`#item_${item_id}_num`).text(shopping_cart[item_id]['num']);
-                }
-                $('#icon_bag_alt_num').text(--icon_bag_alt_num);
-                
-                // total_price = 0;
-                // shopping_cart.forEach(item => {
-                //     total_price += item['num'] * item['price'];
-                // });
-                // $('.cart-price').text(total_price);
-                total_price(shopping_cart);
-                
-                $.ajax({
-                    type: "post",
-                    url: "js/remove_shopping_cart.php",
-                    data: {'item_id':item_id},
-                    success: function(response){
-                        response = JSON.parse(response);
-                        console.log(response);
-                    }
-                });
-            });
-        });
-    </script>
 </body>
 
 </html>
